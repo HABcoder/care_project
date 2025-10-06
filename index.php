@@ -13,7 +13,10 @@
   <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico" />
 
   <!-- bootstrap.min css -->
-  <link rel="stylesheet" href="plugins/bootstrap/css/bootstrap.min.css">
+   <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <!-- Icon Font Css -->
   <link rel="stylesheet" href="plugins/icofont/icofont.min.css">
   <!-- Slick Slider  CSS -->
@@ -23,6 +26,51 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+  <style>
+	    .faq-wrap {
+      max-width: 900px;
+      margin: 2.5rem auto;
+      padding: 1.25rem;
+    }
+    .faq-card {
+      border: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(250,250,252,0.85));
+      box-shadow: 0 6px 22px rgba(18, 38, 63, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .faq-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      display: flex;
+      gap: .75rem;
+      align-items: center;
+    }
+    .faq-title {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .faq-sub {
+      font-size: .875rem;
+      color: #6b7280;
+    }
+    .accordion-button {
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      color: #0b1220;
+    }
+    .accordion-body {
+      padding: .95rem 1.25rem 1.5rem 1.25rem;
+      color: #344054;
+      line-height: 1.5;
+    }
+    @media (max-width: 575.98px) {
+      .faq-wrap { margin: 1rem; padding: .75rem; }
+      .faq-header { padding: .75rem; }
+    }
+  </style>
 
 </head>
 
@@ -295,6 +343,46 @@ I’m very happy with the results and the care I received.
 		</div>
 	</div>
 </section>
+
+ <section class="faq-wrap">
+    <div class="faq-card">
+      <div class="faq-header">
+        <i class="bi bi-hospital fs-3 text-primary" aria-hidden="true"></i>
+        <div>
+          <h3 class="faq-title">Frequently Asked Questions</h3>
+          <div class="faq-sub">Short answers to common patient questions</div>
+        </div>
+      </div>
+
+      <div class="p-3">
+        <div class="accordion" id="hospitalFaqAccordion">
+
+          <!-- FAQ 1 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faqOneHeader">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="false" aria-controls="faqOne">
+                What services does the hospital provide?
+              </button>
+            </h2>
+            <div id="faqOne" class="accordion-collapse collapse" aria-labelledby="faqOneHeader" data-bs-parent="#hospitalFaqAccordion">
+              <div class="accordion-body">
+                We offer a full range of services including emergency care, inpatient & outpatient surgery, diagnostic imaging, maternity care, pediatric services, and a variety of specialist clinics. For a complete list, contact our patient services desk or visit the services page.
+              </div>
+            </div>
+          </div>
+
+
+
+        </div>
+
+        <!-- Small contact CTA -->
+        <div class="mt-3 d-flex justify-content-end">
+          <a href="contact.php" class="btn btn-outline-primary btn-sm" role="button"><i class="bi bi-telephone me-1"></i>Contact Patient Services</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
  
 <!-- footer Start -->
       
@@ -309,7 +397,9 @@ I’m very happy with the results and the care I received.
     <script src="plugins/jquery/jquery.js"></script>
     <!-- Bootstrap 4.3.2 -->
     <script src="plugins/bootstrap/js/popper.js"></script>
-    <script src="plugins/bootstrap/js/bootstrap.min.js"></script>
+   
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="plugins/counterup/jquery.easing.js"></script>
     <!-- Slick Slider -->
     <script src="plugins/slick-carousel/slick/slick.min.js"></script>

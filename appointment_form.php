@@ -2,47 +2,108 @@
 session_start();
 
 if(!isset($_SESSION['role']) || $_SESSION['role'] != 'patient') {
-        header('location: patient/login_pt.php');
-    }
-    if(!isset($_GET['apid']))
-        header('location: index.php');
+    header('location: patient/login_pt.php');
+    exit();
+}
+
+if(!isset($_GET['apid'])) {
+    header('location: index.php');
+    exit();
+}
 
 include "connection.php";
 $email = $_SESSION["user_email"];
+$errors = [];
+
+// Get doctor information
+if(isset($_GET['apid'])){
+    $idget = $_GET['apid'];
+    $teen = "SELECT * FROM doctor as d join docspecialization as dsp on d.speciality = dsp.ds_id where d.id=$idget";
+    $teenx = mysqli_query($con, $teen);
+    $counti = mysqli_num_rows($teenx);
+    if($counti > 0){
+        $row1 = mysqli_fetch_assoc($teenx);
+    } else {
+        header('location: index.php');
+        exit();
+    }
+}
 
 if(isset($_POST['ins'])){
     // Get form data
     $docid = isset($_POST['doctor_id']) ? (int)$_POST['doctor_id'] : 0;
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
+    $firstName = mysqli_real_escape_string($con, $_POST['firstName']);
+    $lastName = mysqli_real_escape_string($con, $_POST['lastName']);
     $fullName = $firstName ." ". $lastName;
     $dob = $_POST['dob'];
-    $email = $_POST['email'];
-    $gender = $_POST['gender'];
+    $email = mysqli_real_escape_string($con, $_POST['email']);
+    $gender = mysqli_real_escape_string($con, $_POST['gender']);
     $sptid = isset($_POST['speid']) ? (int)$_POST['speid'] : 0;
-    $phone = $_POST['phone'];
-    $address = $_POST['address'];
-    $country = $_POST['country'];
+    $phone = mysqli_real_escape_string($con, $_POST['phone']);
+    $address = mysqli_real_escape_string($con, $_POST['address']);
+    $country = mysqli_real_escape_string($con, $_POST['country']);
     $appdate = $_POST['appdate'];
     $apptime = $_POST['apptime'];
-    $message = $_POST['message'];
+    $message = mysqli_real_escape_string($con, $_POST['message']);
     
-   
-    // Insert appointment
-    $query = "INSERT INTO appointment(specialistid, docid, pt_name, dob, pt_gender,pt_email, phone, 
-    pt_address, country, appdate, apptime, message) VALUES ($sptid, $docid, '$fullName', '$dob', '$gender', '$email','$phone',
-    '$address', '$country', '$appdate', '$apptime', '$message')";
+    // VALIDATION CHECKS
     
-    $queryExec = mysqli_query($con,$query);
-
-    if($queryExec){
-        echo "<script>alert('Appointment Booked Successfully');window.location.href = 'index.php'</script>";
+    // 1. Check if date is in past
+    $today = date('Y-m-d');
+    if($appdate < $today) {
+        $errors[] = "Cannot book appointment for past dates. Please select a future date.";
     }
-    else{
-        echo "<script>alert('Error: ".mysqli_error($con)."')</script>";
+    
+    // 2. Check if patient already has appointment on same date
+    $check_patient_appointment = "SELECT COUNT(*) as patient_count FROM appointment 
+                                  WHERE pt_email = '$email' AND appdate = '$appdate' AND status != 'cancelled'";
+    $result_patient = mysqli_query($con, $check_patient_appointment);
+    $patient_data = mysqli_fetch_assoc($result_patient);
+    
+    if($patient_data['patient_count'] > 0) {
+        $errors[] = "You already have an appointment on " . date('M d, Y', strtotime($appdate)) . ". Please choose a different date.";
+    }
+    
+    // 3. Check if doctor has reached daily appointment limit (10 appointments)
+    $check_daily_limit = "SELECT COUNT(*) as daily_count FROM appointment 
+                          WHERE docid = '$docid' AND appdate = '$appdate' AND status != 'cancelled'";
+    $result_daily = mysqli_query($con, $check_daily_limit);
+    $daily_data = mysqli_fetch_assoc($result_daily);
+    
+    if($daily_data['daily_count'] >= 10) {
+        $errors[] = "Doctor has reached the maximum appointments (10) for " . date('M d, Y', strtotime($appdate)) . ". Please choose another date.";
+    }
+    
+    // 4. Check if time slot is already booked
+    $check_time_slot = "SELECT COUNT(*) as slot_count FROM appointment 
+                        WHERE docid = '$docid' AND appdate = '$appdate' AND apptime = '$apptime' AND status != 'cancelled'";
+    $result_slot = mysqli_query($con, $check_time_slot);
+    $slot_data = mysqli_fetch_assoc($result_slot);
+    
+    if($slot_data['slot_count'] > 0) {
+        $errors[] = "The selected time slot is already booked. Please choose another time.";
+    }
+    
+    // If no errors, insert appointment
+    if(empty($errors)) {
+        $query = "INSERT INTO appointment(specialistid, docid, pt_name, dob, pt_gender, pt_email, phone, 
+                  pt_address, country, appdate, apptime, message, status) 
+                  VALUES ($sptid, $docid, '$fullName', '$dob', '$gender', '$email', '$phone',
+                  '$address', '$country', '$appdate', '$apptime', '$message', 'pending')";
+        
+        $queryExec = mysqli_query($con, $query);
+
+        if($queryExec){
+            echo "<script>
+                    alert('Appointment Booked Successfully!');
+                    window.location.href = 'index.php';
+                  </script>";
+            exit();
+        } else {
+            $errors[] = "Error: " . mysqli_error($con);
+        }
     }
 }
-
 ?>
 
 
@@ -51,29 +112,18 @@ if(isset($_POST['ins'])){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Registration</title>
+    <title>Book Appointment - Care Hospital</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-           /* --primary: #28a745;
-            --primary-dark: #218838;
-            --primary-light: #d4edda;
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --primary-light: #cce5ff;
             --secondary: #6c757d;
             --light-bg: #f8f9fa;
             --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            --success: #28a745;*/
-            --primary: #007bff;           /* main blue */
-                --primary-dark: #0056b3;      /* darker blue for hover/focus */
-            --primary-light: #cce5ff;     /* light blue background */
-            --secondary: #6c757d;         /* unchanged - neutral gray */
-            --light-bg: #f8f9fa;          
-            --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
-            --success: #007bff;    
-
-
-
-
+            --success: #28a745;
         }
         
         body {
@@ -81,13 +131,6 @@ if(isset($_POST['ins'])){
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px;
-            animation: gradientShift 15s ease infinite;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         
         .form-container {
@@ -97,12 +140,6 @@ if(isset($_POST['ins'])){
             border-radius: 20px;
             overflow: hidden;
             box-shadow: var(--card-shadow);
-            animation: fadeIn 0.8s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         
         .form-header {
@@ -113,46 +150,18 @@ if(isset($_POST['ins'])){
             overflow: hidden;
         }
         
-        .form-header::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 8s infinite linear;
-        }
-        
-        @keyframes pulse {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
         .form-title {
             font-weight: 700;
             margin-bottom: 5px;
-            position: relative;
         }
         
         .form-subtitle {
             font-weight: 300;
             opacity: 0.9;
-            position: relative;
         }
         
         .form-body {
             padding: 30px;
-        }
-        
-        .form-icon {
-            position: absolute;
-            right: 30px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 3rem;
-            opacity: 0.8;
-            color: rgba(255, 255, 255, 0.7);
         }
         
         .input-group {
@@ -181,7 +190,7 @@ if(isset($_POST['ins'])){
         
         .form-control:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
         }
         
         .form-control:focus + .form-label,
@@ -190,58 +199,6 @@ if(isset($_POST['ins'])){
             font-size: 0.85rem;
             color: var(--primary);
             background: white;
-        }
-        
-        .form-control:focus ~ .input-icon {
-            color: var(--primary);
-            transform: scale(1.1);
-        }
-        
-        .input-icon {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--secondary);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-register {
-            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-            border: none;
-            padding: 12px 30px;
-            font-weight: 600;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-register:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 7px 20px rgba(40, 167, 69, 0.4);
-        }
-        
-        .btn-register::after {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: rotate(30deg);
-            transition: all 0.8s ease;
-        }
-        
-        .btn-register:hover::after {
-            transform: rotate(30deg) translate(20%, 20%);
-        }
-        
-        .terms-text {
-            font-size: 0.9rem;
-            color: var(--secondary);
         }
         
         .gender-options {
@@ -292,16 +249,10 @@ if(isset($_POST['ins'])){
         
         .step {
             display: none;
-            animation: slideIn 0.5s ease-out;
         }
         
         .step.active {
             display: block;
-        }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
         }
         
         .form-footer {
@@ -312,30 +263,22 @@ if(isset($_POST['ins'])){
             border-top: 1px solid #e9ecef;
         }
         
-        .form-note {
-            background: var(--light-bg);
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 50px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+        
+        .alert {
             border-radius: 10px;
-            padding: 15px;
-            font-size: 0.9rem;
-            margin-top: 20px;
-        }
-        
-        .form-note i {
-            color: var(--success);
-            margin-right: 10px;
-        }
-        
-        .city-select {
-            position: relative;
-        }
-        
-        .city-select i {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--primary);
-            pointer-events: none;
+            margin-bottom: 20px;
         }
         
         .card {
@@ -343,51 +286,45 @@ if(isset($_POST['ins'])){
             overflow: hidden;
             border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
+            margin-bottom: 20px;
         }
         
         .review-item {
             padding: 12px 0;
             border-bottom: 1px solid #eee;
-            animation: fadeInItem 0.5s ease-out;
         }
         
         .review-item:last-child {
             border-bottom: none;
         }
         
-        @keyframes fadeInItem {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .step-indicator.active {
+            color: var(--primary);
+            font-weight: 600;
         }
         
-        .form-check-input:checked {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .form-check-input:focus {
-            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+        .form-note {
+            background: var(--light-bg);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 0.9rem;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <div class="form-container">
         <div class="form-header">
-            <h1 class="form-title"><i class="fas fa-heartbeat me-2"></i>Appointment</h1>
-            <p class="form-subtitle">Complete your profile in just a few steps</p>
-            <i class="fas fa-user-injured form-icon"></i>
+            <h1 class="form-title"><i class="fas fa-calendar-check me-2"></i>Book Appointment</h1>
+            <p class="form-subtitle">Schedule your visit with our healthcare professionals</p>
         </div>
         
+        <!-- Progress Bar -->
         <div class="progress-container p-3 bg-light">
             <div class="d-flex justify-content-between mb-2">
                 <span class="step-indicator active">Personal Info</span>
                 <span class="step-indicator">Appointment Details</span>
-                <span class="step-indicator">Review</span>
+                <span class="step-indicator">Review & Confirm</span>
             </div>
             <div class="progress">
                 <div class="progress-bar" style="width: 33%"></div>
@@ -395,22 +332,42 @@ if(isset($_POST['ins'])){
         </div>
         
         <div class="form-body">
-            <form id="patientForm" action="appointment_form.php" method="POST">
+            <!-- Display Errors -->
+            <?php if(!empty($errors)): ?>
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Please fix the following issues:</h6>
+                    <ul class="mb-0">
+                        <?php foreach($errors as $error): ?>
+                            <li><?php echo htmlspecialchars($error); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <form id="patientForm" action="appointment_form.php?apid=<?php echo $idget; ?>" method="POST">
+                <!-- Hidden Fields -->
+                <input type="hidden" name="doctor_id" value="<?php echo $idget; ?>">
+                <input type="hidden" name="speid" value="<?php echo $row1['ds_id']; ?>">
+                <input type="hidden" name="gender" id="genderInput" value="Male">
+                <input type="hidden" name="email" value="<?php echo $_SESSION['user_email']; ?>">
+
                 <!-- Step 1: Personal Information -->
                 <div class="step active" id="step1">
+                    <h4 class="mb-4"><i class="fas fa-user me-2"></i>Personal Information</h4>
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="input-group">
-                                <input type="text" class="form-control" id="firstName" placeholder=" " required name="firstName">
+                                <input type="text" class="form-control" id="firstName" placeholder=" " required name="firstName"
+                                       value="<?php echo isset($_POST['firstName']) ? htmlspecialchars($_POST['firstName']) : ''; ?>">
                                 <label for="firstName" class="form-label">First Name</label>
-                                <span class="input-icon"><i class="fas fa-user"></i></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="input-group">
-                                <input type="text" class="form-control" id="lastName" placeholder=" " required name="lastName">
+                                <input type="text" class="form-control" id="lastName" placeholder=" " required name="lastName"
+                                       value="<?php echo isset($_POST['lastName']) ? htmlspecialchars($_POST['lastName']) : ''; ?>">
                                 <label for="lastName" class="form-label">Last Name</label>
-                                <span class="input-icon"><i class="fas fa-user"></i></span>
                             </div>
                         </div>
                     </div>
@@ -418,256 +375,177 @@ if(isset($_POST['ins'])){
                     <div class="row">
                         <div class="col-md-6">
                             <div class="input-group">
-                                <input type="date" class="form-control" id="dob" placeholder=" " required name="dob">
+                                <input type="date" class="form-control" id="dob" placeholder=" " required name="dob"
+                                       value="<?php echo isset($_POST['dob']) ? htmlspecialchars($_POST['dob']) : ''; ?>"
+                                       max="<?php echo date('Y-m-d'); ?>">
                                 <label for="dob" class="form-label">Date of Birth</label>
-                                <span class="input-icon"><i class="fas fa-birthday-cake"></i></span>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <!-- <label class="form-label">Gender</label> -->
-                                <div class="gender-options">
-                                    <div class="gender-option active">
-                                        <i class="fas fa-male"></i>
-                                        <div value="Male">Male</div>
-                                    </div>
-                                    <div class="gender-option">
-                                        <i class="fas fa-female"></i>
-                                        <div value="Female">Female</div>
-                                        
-                                    </div>
-                                    <input type="hidden" name="gender" id="genderInput" value="Male">
-                                </div>
-                                
-                            </div>
-                        </div>
-
-                </div>
-                            <div class="row">
-                        <div class="col-md-6">
-                            <div class="input-group mb-4">
-                                <!-- <input type="text" class="form-control" id="email" required name="email"> -->
-                                <input type="hidden" name = "email"  value="<?php echo $_SESSION['user_email']; ?>" >
-                                <div class="form-control"><?php echo $_SESSION['user_email']?></div>
-                                <label for="email" class="form-label">Email</label>
-                                <span class="input-icon"><i class="fas fa-envelope"></i></span>
                                
-                
+                                <div class="gender-options">
+                                    <div class="gender-option active" data-gender="Male">
+                                        <i class="fas fa-male"></i>
+                                        <div>Male</div>
+                                    </div>
+                                    <div class="gender-option" data-gender="Female">
+                                        <i class="fas fa-female"></i>
+                                        <div>Female</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <div class="form-control bg-light"><?php echo htmlspecialchars($_SESSION['user_email']); ?></div>
+                                <label class="form-label">Email</label>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="input-group mb-4">
-                                <input type="text" class="form-control" id="phone" required name="phone">
-                                <label for="phone" class="form-label">Phone</label>
-                                <span class="input-icon"><i class="fas fa-phone"></i></span>
+                            <div class="input-group">
+                                <input type="tel" class="form-control" id="phone" required name="phone" placeholder=" "
+                                       value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>">
+                                <label for="phone" class="form-label">Phone Number</label>
                             </div>
                         </div>
-                    
-                   
-
-                        
                     </div>
-                     <div class="input-group mb-4">
-                        <input type="text" class="form-control" id="address" placeholder=" " required name="address">
+
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="address" placeholder=" " required name="address"
+                               value="<?php echo isset($_POST['address']) ? htmlspecialchars($_POST['address']) : ''; ?>">
                         <label for="address" class="form-label">Street Address</label>
-                        <span class="input-icon"><i class="fas fa-home"></i></span>
                     </div>
 
-                     <div class="row">
-                       
-                        <div class="col-md-6">
-                            <div class="input-group mb-4">
-                                <input type="text" class="form-control" id="country" required name="country">
-                                <label for="country" class="form-label">Country</label>
-                                <span class="input-icon"><i class="fas fa-globe"></i></span>
-                            </div>
-                        </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="country" required name="country" placeholder=" "
+                               value="<?php echo isset($_POST['country']) ? htmlspecialchars($_POST['country']) : ''; ?>">
+                        <label for="country" class="form-label">Country</label>
                     </div>
-
-
-            
-
-
                 </div>
                 
-                <!-- Step 2: Contact Information -->
-                 <!-- Step 2: Appointment Details-->
-            <div class="step" id="step2">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="input-group mb-4">
-                            
-                            <!-- <select class="form-control" name="specialist_id" id="specialist" onchange="fetchDoc(this.value)">
-                                  <option>Choose Specialization</option>
-                                 <?php
-                if(isset($_GET['apid'])){
-                    $idget = $_GET['apid'];
-                    $teen = "SELECT * FROM doctor as d join docspecialization as dsp on d.speciality = dsp.ds_id where d.id=$idget";
-                    $teenx = mysqli_query($con, $teen);
-                    $counti = mysqli_num_rows($teenx);
-                    if($counti > 0){
-                        $row1 = mysqli_fetch_assoc($teenx);
-                        echo "data is fetched";
-                   
-                    }}
-								 ?>
-                                 
-                             
-                            </select> -->
-                            <input type="hidden" name="speid"  value= "<?php echo $row1['ds_id'];?>">
-                            <div class="form-control" name="specialist_id" id="specialist"><?php echo $row1['specialist'];?></div>
-                            <span class="input-icon"><i class="fa-solid fa-stethoscope"></i></span>
-                        </div>
-                    </div>
-                     <div class="col-md-6">
-                        
-                            <div class="input-group mb-4">
-                                <input type="hidden" name="doctor_id" value="<?= $idget ?>">
-                                <div class="form-control" id="Doctor" name="doctor" value = "<?php echo $row1['id'];?>"><?php echo $row1['name'];?></div>
-                                  <span class="input-icon" id='icon-doctor' style= 'display:none;'><i class="fa-solid fa-user-doctor"></i></span >
-                            </div>
-                    
-                    </div>
-                   
-                       
-                </div>
-                
+                <!-- Step 2: Appointment Details -->
+                <div class="step" id="step2">
+                    <h4 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Appointment Details</h4>
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="input-group mb-4">
-                                <input type="date" class="form-control" id="appdate" placeholder=" " name="appdate" required>
-                                <label for="appdate" class="form-label">Appointment Date</label>
-                               
+                            <div class="input-group">
+                                <div class="form-control bg-light"><?php echo htmlspecialchars($row1['specialist']); ?></div>
+                                <label class="form-label">Specialization</label>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="input-group mb-4">
-                                <input type="time" class="form-control" id="apptime" placeholder=" " required name="apptime">
-                                <label for="apptime" class="form-label">Appointment Time</label>
-                                
+                            <div class="input-group">
+                                <div class="form-control bg-light"><?php echo htmlspecialchars($row1['name']); ?></div>
+                                <label class="form-label">Doctor</label>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="input-group mb-4">
-                        <input type="text" class="form-control" id="message" placeholder=" " required name="message">
-                        <label for="message" class="form-label">Reason of Appointment</label>
-                        <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="appdate" placeholder=" " name="appdate" required
+                                       value="<?php echo isset($_POST['appdate']) ? htmlspecialchars($_POST['appdate']) : ''; ?>"
+                                       min="<?php echo date('Y-m-d'); ?>">
+                                <label for="appdate" class="form-label">Appointment Date</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="apptime" placeholder=" " required name="apptime"
+                                       value="<?php echo isset($_POST['apptime']) ? htmlspecialchars($_POST['apptime']) : ''; ?>">
+                                <label for="apptime" class="form-label">Appointment Time</label>
+                            </div>
+                        </div>
                     </div>
-    
+                    
+                    <div class="input-group">
+                        <textarea class="form-control" id="message" placeholder=" " required name="message" rows="3"><?php echo isset($_POST['message']) ? htmlspecialchars($_POST['message']) : ''; ?></textarea>
+                        <label for="message" class="form-label">Reason for Appointment</label>
+                    </div>
                 </div>
                 
-                <!-- Step 3: Review and Submit -->
+                <!-- Step 3: Review and Confirm -->
                 <div class="step" id="step3">
-                    <div class="card mb-4">
+                    <h4 class="mb-4"><i class="fas fa-clipboard-check me-2"></i>Review & Confirm</h4>
+                    
+                    <div class="card">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Personal Information</h5>
+                            <h5 class="mb-0"><i class="fas fa-user me-2"></i>Personal Information</h5>
                         </div>
                         <div class="card-body">
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Full Name:</div>
-                                    <div class="col-8" id="reviewName"></div>
-                                </div>
+                                <strong>Full Name:</strong> <span id="reviewName"></span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Date of Birth:</div>
-                                    <div class="col-8" id="reviewDob"></div>
-                                </div>
+                                <strong>Date of Birth:</strong> <span id="reviewDob"></span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Gender:</div>
-                                    <div class="col-8" id="reviewGender">Male</div>
-                                </div>
-                            </div>
-
-                          <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Email:</div>
-                                    <div class="col-8" id="reviewEmail"></div>
-                                </div>
-                            </div>
-
-                            <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Phone:</div>
-                                    <div class="col-8" id="reviewPhone"></div>
-                                </div>
-                            </div>
-
-                                 <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Address:</div>
-                                    <div class="col-8" id="reviewAddress"></div>
-                                </div>
+                                <strong>Gender:</strong> <span id="reviewGender">Male</span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Country:</div>
-                                    <div class="col-8" id="reviewCountry"></div>
-                                </div>
+                                <strong>Email:</strong> <span id="reviewEmail"><?php echo htmlspecialchars($_SESSION['user_email']); ?></span>
                             </div>
-
+                            <div class="review-item">
+                                <strong>Phone:</strong> <span id="reviewPhone"></span>
+                            </div>
+                            <div class="review-item">
+                                <strong>Address:</strong> <span id="reviewAddress"></span>
+                            </div>
+                            <div class="review-item">
+                                <strong>Country:</strong> <span id="reviewCountry"></span>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="card mb-4">
+                    <div class="card">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Appointment Detail</h5>
+                            <h5 class="mb-0"><i class="fas fa-calendar me-2"></i>Appointment Details</h5>
                         </div>
                         <div class="card-body">
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Specialist:</div>
-                                    <div class="col-8" id="reviewspecialist"></div>
-                                </div>
+                                <strong>Specialist:</strong> <span id="reviewSpecialist"><?php echo htmlspecialchars($row1['specialist']); ?></span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Doctor:</div>
-                                    <div class="col-8" id="reviewDoctor"></div>
-                                </div>
+                                <strong>Doctor:</strong> <span id="reviewDoctor"><?php echo htmlspecialchars($row1['name']); ?></span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Appointment Date:</div>
-                                    <div class="col-8" id="reviewDate"></div>
-                                </div>
+                                <strong>Appointment Date:</strong> <span id="reviewDate"></span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Appointment Time:</div>
-                                    <div class="col-8" id="reviewTime"></div>
-                                </div>
+                                <strong>Appointment Time:</strong> <span id="reviewTime"></span>
                             </div>
                             <div class="review-item">
-                                <div class="row">
-                                    <div class="col-4 text-muted">Message:</div>
-                                    <div class="col-8" id="reviewMessage"></div>
-                                </div>
+                                <strong>Reason:</strong> <span id="reviewMessage"></span>
                             </div>
                         </div>
                     </div>
                     
                     <div class="form-check mt-4">
                         <input class="form-check-input" type="checkbox" id="terms" required>
-                        <label class="form-check-label terms-text" for="terms">
-                            I confirm that all information provided is accurate and complete to the best of my knowledge.
+                        <label class="form-check-label" for="terms">
+                            I confirm that all information provided is accurate and I understand the appointment policies.
                         </label>
                     </div>
                 </div>
                 
-                <div class="form-note">
-                    <i class="fas fa-lock"></i> Your information is protected with 256-bit encryption and will only be accessible to authorized medical personnel.
-                </div>
-                
+                <!-- Form Navigation -->
                 <div class="form-footer">
                     <button type="button" class="btn btn-outline-secondary" id="prevBtn">Previous</button>
-                    <button type="submit" class="btn btn-register" id="nextBtn" name="ins">Next Step</button>
+                    <button type="button" class="btn btn-primary" id="nextBtn">Next Step</button>
+                    <button type="submit" class="btn btn-success" id="submitBtn" name="ins" style="display: none;">
+                        <i class="fas fa-calendar-check me-2"></i>Confirm Appointment
+                    </button>
+                </div>
+                
+                <div class="form-note">
+                    <i class="fas fa-lock"></i> Your information is protected and will only be accessible to authorized medical personnel.
                 </div>
             </form>
         </div>
@@ -680,75 +558,32 @@ if(isset($_POST['ins'])){
             
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
             const progressBar = document.querySelector('.progress-bar');
+            const appdateInput = document.getElementById('appdate');
             
-            // Update progress bar
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            appdateInput.min = today;
+            
+            // Update progress and UI
             function updateProgress() {
                 const progress = (currentStep / totalSteps) * 100;
                 progressBar.style.width = `${progress}%`;
                 
                 // Update step indicators
                 document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
-                    if (index < currentStep) {
-                        indicator.classList.add('active');
-                    } else {
-                        indicator.classList.remove('active');
-                    }
+                    indicator.classList.toggle('active', index < currentStep);
                 });
                 
-                // Update button text
-                if (currentStep === totalSteps) {
-                    nextBtn.innerHTML = 'Complete Registration <i class="fas fa-check ms-2"></i>';
-                } else {
-                    nextBtn.textContent = 'Next Step';
-                }
+                // Update button visibility
+                prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+                nextBtn.style.display = currentStep === totalSteps ? 'none' : 'block';
+                submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
                 
-                // Hide previous button on first step
-                if (currentStep === 1) {
-                    prevBtn.style.visibility = 'hidden';
-                } else {
-                    prevBtn.style.visibility = 'visible';
-                }
-                
-                // Populate review fields on last step
-                const patientEmail = "<?php echo isset($_SESSION['user_email']) ? $_SESSION['user_email'] : ''; ?>";
-                const specialistName = "<?php echo isset($row1['specialist']) ? $row1['specialist'] : ''; ?>";
-                const doctorName = "<?php echo isset($row1['name']) ? $row1['name'] : ''; ?>";
+                // Populate review section
                 if (currentStep === totalSteps) {
-                    document.getElementById('reviewName').textContent = 
-                        document.getElementById('firstName').value + ' ' + 
-                        document.getElementById('lastName').value;
-                    
-                    const dob = new Date(document.getElementById('dob').value);
-                    document.getElementById('reviewDob').textContent = 
-                        dob.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    
-                    document.getElementById('reviewEmail').textContent = patientEmail;
-                    
-                    document.getElementById('reviewPhone').textContent = 
-                        document.getElementById('phone').value;
-                    
-                    // document.getElementById('reviewEmergency').textContent = 
-                    //     document.getElementById('emergencyContact').value;
-                    
-                    document.getElementById('reviewAddress').textContent = 
-                        document.getElementById('address').value;
-                    
-                    document.getElementById('reviewCountry').textContent = 
-                        document.getElementById('country').value;
-
-                     document.getElementById('reviewspecialist').textContent = specialistName;
-
-                    document.getElementById('reviewDoctor').textContent = doctorName;
-
-                    document.getElementById('reviewDate').textContent = 
-                        document.getElementById('appdate').value;
-
-                    document.getElementById('reviewTime').textContent = 
-                        document.getElementById('apptime').value;
-
-                     document.getElementById('reviewMessage').textContent = 
-                        document.getElementById('message').value;
+                    populateReviewSection();
                 }
             }
             
@@ -762,42 +597,36 @@ if(isset($_POST['ins'])){
                 updateProgress();
             }
             
-            // Next button click
-            nextBtn.addEventListener('click', function() {
-                if (currentStep < totalSteps) {
-                    goToStep(currentStep + 1);
-                } else {
-                    // Validate form
-                    const form = document.getElementById('patientForm');
-                    if (form.checkValidity()) {
-                        // Submit form
-                        const submitBtn = document.createElement('button');
-                        submitBtn.type = 'submit';
-                        form.appendChild(submitBtn);
-                        submitBtn.click();
-                        form.removeChild(submitBtn);
-                        
-                        // Show success animation
-                        document.querySelector('.form-container').classList.add('animate__animated', 'animate__pulse');
-                        
-                        setTimeout(() => {
-                            alert('Registration complete! Thank you for signing up.');
-                            document.getElementById('patientForm').reset();
-                            goToStep(1);
-                            document.querySelector('.form-container').classList.remove('animate__animated', 'animate__pulse');
-                        }, 800);
-                    } else {
-                        form.reportValidity();
-                    }
-                }
-            });
-            
-            // Previous button click
-            prevBtn.addEventListener('click', function() {
-                if (currentStep > 1) {
-                    goToStep(currentStep - 1);
-                }
-            });
+            // Populate review section
+            function populateReviewSection() {
+                document.getElementById('reviewName').textContent = 
+                    document.getElementById('firstName').value + ' ' + 
+                    document.getElementById('lastName').value;
+                
+                const dob = new Date(document.getElementById('dob').value);
+                document.getElementById('reviewDob').textContent = 
+                    dob.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                
+                document.getElementById('reviewPhone').textContent = 
+                    document.getElementById('phone').value;
+                
+                document.getElementById('reviewAddress').textContent = 
+                    document.getElementById('address').value;
+                
+                document.getElementById('reviewCountry').textContent = 
+                    document.getElementById('country').value;
+                
+                document.getElementById('reviewDate').textContent = 
+                    new Date(document.getElementById('appdate').value).toLocaleDateString('en-US', { 
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                    });
+                
+                document.getElementById('reviewTime').textContent = 
+                    document.getElementById('apptime').value;
+                
+                document.getElementById('reviewMessage').textContent = 
+                    document.getElementById('message').value;
+            }
             
             // Gender selection
             document.querySelectorAll('.gender-option').forEach(option => {
@@ -806,33 +635,61 @@ if(isset($_POST['ins'])){
                         el.classList.remove('active');
                     });
                     this.classList.add('active');
-                    const selectedGender = this.querySelector('div').textContent.trim();
-        document.getElementById('reviewGender').textContent = selectedGender;
-
-        // ✅ Set value in hidden input for form submission
-        document.getElementById('genderInput').value = selectedGender;
+                    const selectedGender = this.getAttribute('data-gender');
+                    document.getElementById('genderInput').value = selectedGender;
+                    document.getElementById('reviewGender').textContent = selectedGender;
                 });
             });
             
-            // Initialize progress
-            updateProgress();
+            // Date validation
+            appdateInput.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    alert('Please select a future date');
+                    this.value = '';
+                }
+            });
             
-            // Add animation to form elements on scroll
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+            // Navigation event handlers
+            nextBtn.addEventListener('click', function() {
+                // Validate current step
+                const currentStepElement = document.getElementById(`step${currentStep}`);
+                const inputs = currentStepElement.querySelectorAll('input[required], select[required], textarea[required]');
+                let valid = true;
+                
+                inputs.forEach(input => {
+                    if (!input.checkValidity()) {
+                        input.reportValidity();
+                        valid = false;
                     }
                 });
-            }, {
-                threshold: 0.1
+                
+                if (valid && currentStep < totalSteps) {
+                    goToStep(currentStep + 1);
+                }
             });
             
-            document.querySelectorAll('.input-group, .gender-options, .form-note').forEach(el => {
-                observer.observe(el);
+            prevBtn.addEventListener('click', function() {
+                if (currentStep > 1) {
+                    goToStep(currentStep - 1);
+                }
             });
+            
+            // Form submission validation
+            document.getElementById('patientForm').addEventListener('submit', function(e) {
+                if (currentStep === totalSteps && !document.getElementById('terms').checked) {
+                    e.preventDefault();
+                    alert('Please accept the terms and conditions');
+                    return;
+                }
+            });
+            
+            // Initialize
+            updateProgress();
         });
-
     </script>
 </body>
 </html>
