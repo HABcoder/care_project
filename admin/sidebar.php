@@ -152,6 +152,11 @@
                     <i class="fas fa-procedures"></i> Patients
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="faq.php">
+                    <i class="fas fa-question-circle"></i> FAQs
+                </a>
+            </li>
              <li class="nav-item">
                 <a class="nav-link" href="add_admin.php">
                     <i class="fas fa-user-plus me-2"></i> Add Admin
