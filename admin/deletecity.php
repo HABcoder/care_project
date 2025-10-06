@@ -62,4 +62,21 @@ if(isset($_GET['delid'])) {
         </script>";
     }
 }
+
+
+if(isset($_GET['spc_id'])) {
+    $spc_id = $_GET['spc_id'];
+    
+    // Delete the specialist
+    $delete_specialist = "DELETE FROM docspecialization WHERE ds_id = '$spc_id'";
+    $qu_del = mysqli_query($con, $delete_specialist);
+    if($qu_del) {
+        echo "<script>
+            alert('Specialist deleted successfully!');
+            window.location.href='addcity.php';
+        </script>";
+    } else {
+        echo "Error deleting specialist: " . mysqli_error($con);
+    }
+}
 ?>

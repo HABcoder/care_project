@@ -6,6 +6,41 @@ if(!isset($_SESSION['role']) || $_SESSION['role'] != 'A'){
 
 include("../connection.php");
 
+// Handle edit form submission
+if(isset($_POST['update_special'])){
+    $ds_id = mysqli_real_escape_string($con, $_POST['ds_id']);
+    $special = mysqli_real_escape_string($con, $_POST['special']);
+    $desp = mysqli_real_escape_string($con, $_POST['desp']);
+    
+    $update_sql = "UPDATE docspecialization SET specialist='$special', description='$desp' WHERE ds_id='$ds_id'";
+    if(mysqli_query($con, $update_sql)){
+        echo "<script>alert('Specialization updated successfully!'); window.location.href='addcity.php';</script>";
+    } else {
+        echo "<script>alert('Failed to update specialization: " . mysqli_error($con) . "'); window.location.href='addcity.php';</script>";
+    }
+}
+
+// Handle delete action
+if(isset($_GET['spc_id'])){
+    $spc_id = mysqli_real_escape_string($con, $_GET['spc_id']);
+    $delete_sql = "DELETE FROM docspecialization WHERE ds_id='$spc_id'";
+    if(mysqli_query($con, $delete_sql)){
+        echo "<script>alert('Specialization deleted successfully!'); window.location.href='addcity.php';</script>";
+    } else {
+        echo "<script>alert('Failed to delete specialization: " . mysqli_error($con) . "'); window.location.href='addcity.php';</script>";
+    }
+}
+
+// Handle city deletion
+if(isset($_GET['delid'])){
+    $ct_id = mysqli_real_escape_string($con, $_GET['delid']);
+    $delete_city_sql = "DELETE FROM city WHERE ct_id='$ct_id'";
+    if(mysqli_query($con, $delete_city_sql)){
+        echo "<script>alert('City deleted successfully!'); window.location.href='addcity.php';</script>";
+    } else {
+        echo "<script>alert('Failed to delete city: " . mysqli_error($con) . "'); window.location.href='addcity.php';</script>";
+    }
+}
 
 ?>
 
@@ -116,6 +151,38 @@ include("../connection.php");
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-edit {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+        }
+        
+        .btn-edit:hover {
+            background-color: #e0a800;
+            color: #212529;
+        }
+        
+        .btn-delete {
+            background-color: var(--primary-red);
+            color: white;
+            border: none;
+        }
+        
+        .btn-delete:hover {
+            background-color: var(--red-hover);
+            color: white;
+        }
+        
+        .modal-header {
+            background-color: var(--primary-blue);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -158,40 +225,41 @@ include("../connection.php");
                                 </div>
                             </form>
                             <?php 
-if(isset($_POST['ins'])){
-    // Trim and sanitize input
-    $ct = trim(mysqli_real_escape_string($con, $_POST['city']));
-    
-    // Validate input is not empty
-    if(empty($ct)) {
-        echo "<script>alert('City name cannot be empty!'); window.location.href='addcity.php';</script>";
-        exit();
-    }
-    
-    // Check if city already exists (case-insensitive check)
-    $check_sql = "SELECT city_name FROM city WHERE LOWER(city_name) = LOWER('$ct')";
-    $check_result = mysqli_query($con, $check_sql);
-    
-    if(mysqli_num_rows($check_result) > 0) {
-        echo "<script>alert('City \"$ct\" already exists!'); window.location.href='addcity.php';</script>";
-    } else {
-        // Insert new city
-        $insert_sql = "INSERT INTO city (city_name) VALUES ('$ct')";
-        if(mysqli_query($con, $insert_sql)) {
-            echo "<script>alert('City \"$ct\" added successfully!'); window.location.href='addcity.php';</script>";
-        } else {
-            $error = mysqli_error($con);
-            echo "<script>alert('Failed to add city. Error: $error'); window.location.href='addcity.php';</script>";
-        }
-    }
-}
-?>
+                            if(isset($_POST['ins'])){
+                                // Trim and sanitize input
+                                $ct = trim(mysqli_real_escape_string($con, $_POST['city']));
+                                
+                                // Validate input is not empty
+                                if(empty($ct)) {
+                                    echo "<script>alert('City name cannot be empty!'); window.location.href='addcity.php';</script>";
+                                    exit();
+                                }
+                                
+                                // Check if city already exists (case-insensitive check)
+                                $check_sql = "SELECT city_name FROM city WHERE LOWER(city_name) = LOWER('$ct')";
+                                $check_result = mysqli_query($con, $check_sql);
+                                
+                                if(mysqli_num_rows($check_result) > 0) {
+                                    echo "<script>alert('City \"$ct\" already exists!'); window.location.href='addcity.php';</script>";
+                                } else {
+                                    // Insert new city
+                                    $insert_sql = "INSERT INTO city (city_name) VALUES ('$ct')";
+                                    if(mysqli_query($con, $insert_sql)) {
+                                        echo "<script>alert('City \"$ct\" added successfully!'); window.location.href='addcity.php';</script>";
+                                    } else {
+                                        $error = mysqli_error($con);
+                                        echo "<script>alert('Failed to add city. Error: $error'); window.location.href='addcity.php';</script>";
+                                    }
+                                }
+                            }
+                            ?>
                             
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
                                             <th>City Name</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -203,16 +271,18 @@ if(isset($_POST['ins'])){
                                         if($count > 0){
                                             while($row = mysqli_fetch_assoc($query)){
                                                 echo "<tr>";
-                                                echo "<td>" . htmlspecialchars($row['city_name']) . "</td>";?>
-                                                <td><a href="deletecity.php?delid=<?php echo $row['ct_id']; ?>"><i class="fa-solid fa-xmark" style="color: #c20c0cff;"></i></a>
-                                                <?php
+                                                echo "<td>" . htmlspecialchars($row['city_name']) . "</td>";
+                                                echo "<td>";
+                                                echo "<a  style= 'color: red;' href='deletecity.php?delid=" . $row['ct_id'] . "' class='btn btn-sm btn-delete' onclick='return confirm(\"Are you sure you want to delete this city?\");'>";
+                                                echo "<i class='fas fa-trash me-1'></i>Delete";
+                                                echo "</a>";
+                                                echo "</td>";
                                                 echo "</tr>";
                                             }
                                         } else {
-                                            echo "<tr><td colspan='1' class='text-center text-muted'>No cities found</td></tr>";
+                                            echo "<tr><td colspan='2' class='text-center text-muted'>No cities found</td></tr>";
                                         }
                                         ?>
-                                        
                                     </tbody>
                                 </table>
                             </div>
@@ -242,15 +312,23 @@ if(isset($_POST['ins'])){
                             </form>
                             <?php 
                             if(isset($_POST['des'])){
-                              $special = $_POST['special'];
-                              $desp = $_POST['desp'];
-                              $sql23 = "INSERT INTO docspecialization (specialist, description) VALUES ('$special', '$desp');";
-                              $query23 = mysqli_query($con, $sql23);
-                              if($query23){
-                                echo "<script>alert('Data updated successfully'); window.location.href='addcity.php';</script>";
-                              }else {
-                                echo "<script>alert('Failed to add specialization'); window.location.href='addcity.php';</script>";
-                              }
+                                $special = mysqli_real_escape_string($con, $_POST['special']);
+                                $desp = mysqli_real_escape_string($con, $_POST['desp']);
+                                
+                                // Check if specialization already exists
+                                $check_sql = "SELECT specialist FROM docspecialization WHERE LOWER(specialist) = LOWER('$special')";
+                                $check_result = mysqli_query($con, $check_sql);
+                                
+                                if(mysqli_num_rows($check_result) > 0) {
+                                    echo "<script>alert('Specialization \"$special\" already exists!'); window.location.href='addcity.php';</script>";
+                                } else {
+                                    $sql23 = "INSERT INTO docspecialization (specialist, description) VALUES ('$special', '$desp')";
+                                    if(mysqli_query($con, $sql23)){
+                                        echo "<script>alert('Specialization added successfully!'); window.location.href='addcity.php';</script>";
+                                    } else {
+                                        echo "<script>alert('Failed to add specialization: " . mysqli_error($con) . "'); window.location.href='addcity.php';</script>";
+                                    }
+                                }
                             }
                             ?>
                             
@@ -260,6 +338,7 @@ if(isset($_POST['ins'])){
                                         <tr>
                                             <th>Specialist</th>
                                             <th>Description</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -273,10 +352,21 @@ if(isset($_POST['ins'])){
                                                 echo "<tr>";
                                                 echo "<td>" . htmlspecialchars($row['specialist']) . "</td>";
                                                 echo "<td>" . htmlspecialchars($row['description']) . "</td>";
+                                                echo "<td class='action-buttons'>";
+                                                echo "<button class='btn btn-sm btn-edit' data-bs-toggle='modal' data-bs-target='#editSpecializationModal' 
+                                                        data-id='" . $row['ds_id'] . "' 
+                                                        data-special='" . htmlspecialchars($row['specialist']) . "' 
+                                                        data-desp='" . htmlspecialchars($row['description']) . "'>";
+                                                echo "<i class='fas fa-edit me-1'></i>Edit";
+                                                echo "</button>";
+                                                echo "<a href='addcity.php?spc_id=" . $row['ds_id'] . "' class='btn btn-sm btn-delete' onclick='return confirm(\"Are you sure you want to delete this specialization?\");' style= 'color: red;'>";
+                                                echo "<i class='fas fa-trash me-1'></i>Delete";
+                                                echo "</a>";
+                                                echo "</td>";
                                                 echo "</tr>";
                                             }
                                         } else {
-                                            echo "<tr><td colspan='2' class='text-center text-muted'>No specializations found</td></tr>";
+                                            echo "<tr><td colspan='3' class='text-center text-muted'>No specializations found</td></tr>";
                                         }
                                         ?>
                                     </tbody>
@@ -289,6 +379,35 @@ if(isset($_POST['ins'])){
         </div>
     </div>
 
+    <!-- Edit Specialization Modal -->
+    <div class="modal fade" id="editSpecializationModal" tabindex="-1" aria-labelledby="editSpecializationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSpecializationModalLabel">Edit Specialization</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="addcity.php" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="ds_id" id="edit_ds_id">
+                        <div class="mb-3">
+                            <label for="edit_special" class="form-label">Specialization</label>
+                            <input type="text" class="form-control" id="edit_special" name="special" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_desp" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="edit_desp" name="desp">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="update_special" class="btn btn-primary">Update Specialization</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -297,6 +416,23 @@ if(isset($_POST['ins'])){
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Handle edit modal data population
+        document.addEventListener('DOMContentLoaded', function() {
+            var editModal = document.getElementById('editSpecializationModal');
+            if (editModal) {
+                editModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var ds_id = button.getAttribute('data-id');
+                    var special = button.getAttribute('data-special');
+                    var desp = button.getAttribute('data-desp');
+                    
+                    document.getElementById('edit_ds_id').value = ds_id;
+                    document.getElementById('edit_special').value = special;
+                    document.getElementById('edit_desp').value = desp;
+                });
+            }
         });
     </script>
 </body>
