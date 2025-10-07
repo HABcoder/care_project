@@ -48,9 +48,6 @@ if(isset($_POST['search']) && !empty($_POST['search'])){
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/animations.css">  
-    <link rel="stylesheet" href="../css/main.css">  
-    <link rel="stylesheet" href="../css/admin.css">
        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -71,40 +68,7 @@ if(isset($_POST['search']) && !empty($_POST['search'])){
         }
       
         
-        /* Main content area */
-        /* .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 20px;
-        } */
-        
-        /* Dashboard cards */
-        /* .dashboard-card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-        } */
-        
-        /* .dashboard-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card-icon {
-            font-size: 2rem;
-            opacity: 0.7;
-        } */
-        
-        /* Tables */
-        /* .data-table {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        
-        .data-table thead {
-            background-color: var(--primary-blue);
-            color: white;
-        } */
+    
             td{
                 font-size: 100%;
             }
@@ -335,11 +299,6 @@ if(isset($_POST['search']) && !empty($_POST['search'])){
     </div>
   </div>
 </div>
-   
-
-  
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-   
-
 </body>
 </html>

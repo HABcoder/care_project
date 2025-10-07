@@ -46,11 +46,7 @@ if(isset($_POST['ins'])){
         echo "<script>alert('Email not found');</script>";
     }
 }
-            
-          
-                
-    
-            
+           
 ?>
 
 <!DOCTYPE html>
