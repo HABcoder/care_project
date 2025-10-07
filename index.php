@@ -358,19 +358,30 @@ I’m very happy with the results and the care I received.
         <div class="accordion" id="hospitalFaqAccordion">
 
           <!-- FAQ 1 -->
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="faqOneHeader">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne" aria-expanded="false" aria-controls="faqOne">
-                What services does the hospital provide?
-              </button>
-            </h2>
-            <div id="faqOne" class="accordion-collapse collapse" aria-labelledby="faqOneHeader" data-bs-parent="#hospitalFaqAccordion">
-              <div class="accordion-body">
-                We offer a full range of services including emergency care, inpatient & outpatient surgery, diagnostic imaging, maternity care, pediatric services, and a variety of specialist clinics. For a complete list, contact our patient services desk or visit the services page.
-              </div>
-            </div>
-          </div>
-
+		   <?php 
+           $sqli = 'SELECT * FROM faqs';
+		   	$queryi = mysqli_query($con, $sqli);  
+			$counti = mysqli_num_rows($queryi);
+			if($counti>0){
+				while($rowi = mysqli_fetch_assoc($queryi)){
+		   ?>
+		  <div class="accordion-item">
+			<h2 class="accordion-header" id="faqOneHeader<?php echo $rowi['id']; ?>">
+			  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne<?php echo $rowi['id']; ?>" aria-expanded="false" aria-controls="faqOne<?php echo $rowi['id']; ?>">
+				<?php echo $rowi['question']; ?>
+			  </button>
+			</h2>
+			<div id="faqOne<?php echo $rowi['id']; ?>" class="accordion-collapse collapse" aria-labelledby="faqOneHeader<?php echo $rowi['id']; ?>" data-bs-parent="#hospitalFaqAccordion">
+			  <div class="accordion-body">
+				<?php echo $rowi['answer']; ?>
+			  </div>
+			</div>
+		  </div>
+		  <?php 
+				}
+			}
+		   ?>
+         
 
 
         </div>
