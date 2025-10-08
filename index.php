@@ -260,22 +260,7 @@ Their stories reflect the compassionate care, trust, and healing we strive to de
 	<div class="container">
 		<div class="row align-items-center">
 			<div class="col-lg-12 testimonial-wrap-2">
-				<div class="testimonial-block style-2  gray-bg">
-					<i class="icofont-quote-right"></i>
-
-					<div class="testimonial-thumb">
-						<img src="images/team/farah.png" alt="" class="img-fluid">
-					</div>
-
-					<div class="client-info ">
-						<h4>Cardiologist</h4>
-						<span>Dr. Farah</span>
-						<p>
-						The doctor was incredibly kind, attentive, and made me feel completely at ease.
-I truly appreciated the time taken to explain every step of my treatment.
-						</p>
-					</div>
-				</div>
+				
 
 				<div class="testimonial-block style-2  gray-bg">
 					<div class="testimonial-thumb">
