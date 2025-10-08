@@ -25,7 +25,9 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <!-- Main Stylesheet -->
+   <link rel="stylesheet" href="css/style2.css">
   <link rel="stylesheet" href="css/style.css">
+  
   <style>
 	    .faq-wrap {
       max-width: 900px;
@@ -425,6 +427,8 @@ I’m very happy with the results and the care I received.
     
     <script src="js/script.js"></script>
     <script src="js/contact.js"></script>
+
+	
 
   </body>
   </php>

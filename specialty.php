@@ -141,7 +141,7 @@ include 'connection.php';?>
                                         </div>
                                     </div>
                                     <div class="team-text position-relative bg-light text-center rounded-bottom p-4 pt-5">
-                                        <h4 class="mb-2">DR. <?php echo $row['name']; ?></h4>
+                                        <h4 class="mb-2 p-3">DR. <?php echo $row['name']; ?></h4>
                                         <h5 class="mb-2"><?php echo $row['city_name']; ?></h5>
                                         <p class="text-primary mb-0"> </p>
                                         <a id = 'appbtn' href="appointment_form.php?apid=<?php echo $row['id'];?>" class="btn \ py-3 px-5 text-white" >Appointment</a>
