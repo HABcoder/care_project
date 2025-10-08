@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 17, 2025 at 02:51 PM
+-- Generation Time: Oct 08, 2025 at 06:26 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -49,7 +49,8 @@ CREATE TABLE `appointment` (
 --
 
 INSERT INTO `appointment` (`id`, `specialistid`, `docid`, `pt_name`, `dob`, `pt_gender`, `pt_email`, `phone`, `pt_address`, `country`, `appdate`, `apptime`, `message`, `status`) VALUES
-(43, 5, 7, 'fazila', '5364-02-04', 'male', 'fazila@gmail.com', '0345-8956231', '65ryhtgfggfgsdxf', 'Pakistan', '2025-08-01', '17:41:00', 'fever', 'approved');
+(43, 5, 7, 'fazila', '5364-02-04', 'male', 'fazila@gmail.com', '0345-8956231', '65ryhtgfggfgsdxf', 'Pakistan', '2025-08-01', '17:41:00', 'fever', 'approved'),
+(44, 1, 8, 'zira Hassan', '2025-10-01', 'Male', 'zira@gmail.com', '03167872019', 'karachi', 'Pakistan', '2025-10-06', '01:00:00', 'uy', 'pending');
 
 -- --------------------------------------------------------
 
@@ -123,8 +124,7 @@ CREATE TABLE `docspecialization` (
 --
 
 INSERT INTO `docspecialization` (`ds_id`, `specialist`, `description`) VALUES
-(1, 'Dematologist', 'Expert care for your skin, hair, and nails. Click to view our top dermatologists ready to help you look and feel your best.'),
-(2, 'Cardiology', 'Heart care from trusted specialists. Click to explore top cardiologists dedicated to your heart health'),
+(1, 'Dematologists', 'Expert care for your skin, hair, and nails. Click to view our top dermatologists ready to help you look and feel your best.'),
 (3, 'OPD', 'Outpatient services tailored to your needs. Click to explore top doctors available for quick consultations.'),
 (4, 'Dentist', 'Comprehensive dental care for a brighter smile. Click to explore top dental experts.'),
 (5, 'Neurologist', 'Specialized care for brain and nerve conditions. Click to meet expert neurologists today.'),
@@ -166,9 +166,31 @@ INSERT INTO `doctor` (`id`, `name`, `email`, `phone`, `gender`, `DOB`, `city`, `
 (14, 'Maryam', 'maryam12@gmail.com', '03123456789', 'female', '2006-03-21', 4, '2147483647', 'MBBS', '3years', 3, 'Morning', 'Main Clinic', '2_20250807_220814.jpg'),
 (16, 'Wania', 'wania12@gmail.com', '03123456725', 'female', '2002-03-12', 2, '2147483647123', 'MBBS', '3years', 6, 'Night', 'Westside Hospital', 'anaiya_20250807_221550.jpg'),
 (17, 'Anus', 'anus12@gmail.com', '03123456789', 'Male', '2001-05-14', 3, '2147483647', 'MBBS', '3years', 3, 'Morning', 'Westside Hospital', 'team-1_20250807_221741.jpg'),
-(22, 'wasam', 'mdwasam@gmail.com', '0314-9234565', 'Male', '2025-08-13', 4, '4045849837412', 'PHD', '7 year', 2, 'Night', 'City Health Center', 'wasam_20250816_175932.jpg'),
 (23, 'AbdulRafy', 'rafy12@gmail.com', '0314-2345658', 'Male', '2025-08-06', 3, '4045888498374', 'PHD', '7 year', 4, 'Morning', 'Westside Hospital', 'rafy_20250816_214303.jpg'),
 (24, 'Ifra', 'ifra12@gmail.com', '0315-5236941', 'Female', '2025-08-09', 4, '4210145614569', 'msc', '2 year', 7, 'Morning', 'Downtown Branch', 'ifra_20250816_215922.jpg');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `faqs`
+--
+
+CREATE TABLE `faqs` (
+  `id` int(11) NOT NULL,
+  `question` varchar(225) NOT NULL,
+  `answer` varchar(225) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `faqs`
+--
+
+INSERT INTO `faqs` (`id`, `question`, `answer`) VALUES
+(2, 'What are your visiting hours?', '9:00 AM to 8:00 PM daily'),
+(3, 'Do you offer emergency services?', 'Yes, our emergency department is open 24 hours a day, 7 days a week. Our medical team is always ready to handle urgent and critical situations.'),
+(4, 'Can I get online lab reports?', 'Yes, lab results are available through our patient portal.'),
+(5, 'Do you accept insurance?', 'Yes, we accept most major insurance plans.'),
+(7, 'How can I book an appointment?', 'You can easily book an appointment online through our website or by calling our front desk. Our staff will help you choose a suitable time and doctor.');
 
 -- --------------------------------------------------------
 
@@ -207,7 +229,9 @@ INSERT INTO `signup` (`id`, `name`, `phone`, `email`, `password`, `role`) VALUES
 (60, 'admin', '0345-6010922', 'admin13@gmail.com', '$2y$10$4Pyu.jGLwD7Uf3vk0hTqf.13b8YMRr1xseWgUQOsZtcTki9IHBHzy', 'A'),
 (61, 'adminf', '0315-4598592', 'admin14@gmail.com', '$2y$10$RvbufTZJY.V33jU4kDffruC/dCQRuTgVvJFgdkN2.883327bCQArW', 'A'),
 (63, 'fazila', '0300-1234567', 'fazila@gmail.com', '$2y$10$aLCQ4vU.UVmYUTeDzFCwFePZyd0x0KOVtm7goGy/evcpJNDJVQRxq', 'patient'),
-(65, 'admin', '0312-8956412', 'admin5@gmail.com', '$2y$10$R2PuBGJLOehglmTYEMkRtuUJvY1TeUw1jLY8nYGucL4DZ.mVQj.Bq', 'A');
+(65, 'admin', '0312-8956412', 'admin5@gmail.com', '$2y$10$R2PuBGJLOehglmTYEMkRtuUJvY1TeUw1jLY8nYGucL4DZ.mVQj.Bq', 'A'),
+(66, 'lira', '0315-8872019', 'lira@gmail.com', '$2y$10$RNZoxSFmBiPdmyHmaEN8wum3NMbAgjrvTIQlqNHwXx09boBz9xgG6', 'patient'),
+(67, 'zira', '0315-9072019', 'zira@gmail.com', '$2y$10$Qdp46cdUMtccXm3utOw6eOJKuIkcvsCy/1UdTNXOrj7I2fM56u536', 'patient');
 
 --
 -- Indexes for dumped tables
@@ -248,6 +272,12 @@ ALTER TABLE `doctor`
   ADD KEY `fk-app-city` (`city`);
 
 --
+-- Indexes for table `faqs`
+--
+ALTER TABLE `faqs`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `signup`
 --
 ALTER TABLE `signup`
@@ -261,7 +291,7 @@ ALTER TABLE `signup`
 -- AUTO_INCREMENT for table `appointment`
 --
 ALTER TABLE `appointment`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `city`
@@ -288,10 +318,16 @@ ALTER TABLE `doctor`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
+-- AUTO_INCREMENT for table `faqs`
+--
+ALTER TABLE `faqs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- AUTO_INCREMENT for table `signup`
 --
 ALTER TABLE `signup`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- Constraints for dumped tables
@@ -309,7 +345,7 @@ ALTER TABLE `appointment`
 --
 ALTER TABLE `doctor`
   ADD CONSTRAINT `fk-app-city` FOREIGN KEY (`city`) REFERENCES `city` (`ct_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk-doctor-speciality` FOREIGN KEY (`speciality`) REFERENCES `docspecialization` (`ds_id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+  ADD CONSTRAINT `fk-doctor-speciality` FOREIGN KEY (`speciality`) REFERENCES `docspecialization` (`ds_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
